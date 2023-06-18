@@ -9,6 +9,14 @@ import {
   PAGE_DETAILS,
   READING_TEXT_SUCCESS,
   TARGET_MONTH,
+  OPTIONS_TARGET_APPLY_CENTER,
+  OPTIONS_TARGET_VISA_TYPE,
+  LOGIN_LIMIT_TIME,
+  TIMES_LIMITS,
+  TIMEOUT_HOURS,
+  SELECT_LOCATION_STEP,
+  APPLY_TYPE_STEP,
+  VISA_TYPE_STEP,
 } from "./config/index";
 import "./App.scss";
 
@@ -27,20 +35,21 @@ function App() {
     setPassword((e.target as HTMLInputElement).value);
   };
 
+  const saveUserData = () => {
+    GM_setValue("username", email);
+    GM_setValue("password", password);
+    sessionStorage.setItem("userEmail", email);
+    sessionStorage.setItem("userPass", password);
+  };
+
   // 填入登录信息
   const setVisaInfo = () => {
     if (currentUrl() === PAGE_LOGIN) {
       return new Promise((resolve) => {
-        GM_setValue("username", email);
-        GM_setValue("password", password);
         let usernameInput = getElement(".mat-form-field-infix #mat-input-0");
         let passwordInput = getElement(".mat-form-field-infix #mat-input-1");
-        (usernameInput as JQuery<HTMLElement>)
-          .val(email)[0]
-          .dispatchEvent(new Event("input"));
-        (passwordInput as JQuery<HTMLElement>)
-          .val(password)[0]
-          .dispatchEvent(new Event("input"));
+        (usernameInput as JQuery<HTMLElement>).val(email)[0].dispatchEvent(new Event("input"));
+        (passwordInput as JQuery<HTMLElement>).val(password)[0].dispatchEvent(new Event("input"));
         setShow(false);
         resolve(true);
       });
@@ -52,12 +61,128 @@ function App() {
     const res = await setVisaInfo();
     if (res) {
       let btn = getElement("app-login button.btn-block");
-      btn &&
-        (btn as JQuery<HTMLElement>)[0].dispatchEvent(new MouseEvent("click"));
+      btn && (btn as JQuery<HTMLElement>)[0].dispatchEvent(new MouseEvent("click"));
     }
   };
 
-  const checkSchedule = () => {
+  // 选择签证中心
+  const selectLocationStep = () => {
+    let selectLocation = $("#mat-select-0");
+    return new Promise((resolve) => {
+      if (selectLocation.is(".mat-select-empty")) {
+        let options = $("#mat-select-0-panel mat-option");
+        if (options.length) {
+          options.each(function () {
+            let name = $(this).text().trim();
+            if (name == OPTIONS_TARGET_APPLY_CENTER) {
+              $(this)[0].dispatchEvent(new MouseEvent("click"));
+              resolve(true);
+            }
+          });
+        } else {
+          selectLocation[0].dispatchEvent(new MouseEvent("click"));
+        }
+        // setTimeout(checkSchedule, 1000 * SELECT_LOCATION_STEP);
+      } else {
+        resolve(false);
+      }
+    });
+  };
+  // 选择申请类型
+  const selectApplyTypeStep = () => {
+    let selectType = $("#mat-select-2");
+    return new Promise((resolve) => {
+      if (selectType.is(".mat-select-empty")) {
+        let options = $("#mat-select-2-panel mat-option");
+        if (options.length) {
+          options.each(function () {
+            let name = $(this).text().trim();
+            if (name == OPTIONS_TARGET_VISA_TYPE) {
+              $(this)[0].dispatchEvent(new MouseEvent("click"));
+              resolve(true);
+            }
+          });
+        } else {
+          selectType[0].dispatchEvent(new MouseEvent("click"));
+        }
+        // setTimeout(checkSchedule, 1000 * APPLY_TYPE_STEP);
+      } else {
+        resolve(false);
+      }
+    });
+  };
+  // 选择签证类型
+  const selectVisaTypeStep = () => {
+    let selectVisaType = $("#mat-select-4");
+    return new Promise(() => {
+      if (selectVisaType.is(".mat-select-empty")) {
+        let options = $("#mat-select-4-panel mat-option");
+        if (options.length) {
+          let lastCheckIndex: number = GM_getValue("lastCheckIndex");
+          if (typeof lastCheckIndex === "undefined" || lastCheckIndex == null) {
+            lastCheckIndex = -1;
+          }
+          let checkIndex = lastCheckIndex + 1;
+          if (checkIndex >= options.length) {
+            checkIndex = 0;
+          }
+          let checkOption = $(options[checkIndex]);
+          checkOption[0].dispatchEvent(new MouseEvent("click"));
+          GM_setValue("lastCheckIndex", checkIndex);
+        } else {
+          selectVisaType[0].dispatchEvent(new MouseEvent("click"));
+        }
+        setTimeout(selectVisaTypeStep, 1000 * VISA_TYPE_STEP);
+      } else {
+        checkResult();
+      }
+    });
+  };
+
+  // 点击「空白」
+  const clickBlank = () => {
+    let blank_span = $("span.ml-auto");
+    blank_span[0].dispatchEvent(new MouseEvent("click"));
+  };
+  // 点击「保持」 - 选择器不精确
+  function clickTipsBtn() {
+    let tipsBtn = $("#cdk-overlay-3 mat-dialog-container mat-modal-delete mat-dialog-actions row mat-btn-lg btn-block");
+    if (tipsBtn.length) {
+      tipsBtn[0].dispatchEvent(new MouseEvent("click"));
+    }
+  }
+  // 请求限制
+  let QUERY_TIMES = 0;
+  const queryLimit = () => {
+    QUERY_TIMES++;
+    console.log("QUERY_TIMES: ", QUERY_TIMES);
+    return new Promise((resolve) => {
+      if (QUERY_TIMES >= TIMES_LIMITS) {
+        console.log("========");
+        resolve(false);
+        setTimeout(() => {
+          QUERY_TIMES = 0;
+          checkSchedule();
+        }, 1000 * 60 * 60 * TIMEOUT_HOURS);
+      } else {
+        resolve(true);
+      }
+    });
+  };
+
+  // 登录次数限制
+  let loginTime = 0;
+  const LoginLimit = () => {
+    return new Promise((resolve) => {
+      if (loginTime >= LOGIN_LIMIT_TIME) {
+        resolve(false);
+      } else {
+        resolve(true);
+      }
+    });
+  };
+
+  const checkSchedule = async () => {
     if ($("app-session-timeout").length) {
       location.href = PAGE_LOGIN;
       return;
@@ -67,62 +192,65 @@ function App() {
       let selectType = $("#mat-select-2");
       let selectVisaType = $("#mat-select-4");
       if (selectLocation.length && selectType.length && selectVisaType.length) {
-        if (selectLocation.is(".mat-select-empty")) {
-          let options = $("#mat-select-0-panel mat-option");
-          if (options.length) {
-            options.each(function () {
-              let name = $(this).text().trim();
-              if (name == "重庆意大利签证申请中心") {
-                $(this)[0].dispatchEvent(new MouseEvent("click"));
-              }
+        selectLocationStep().then((done) => {
+          done &&
+            selectApplyTypeStep().then((done) => {
+              done && selectVisaTypeStep();
             });
-          } else {
-            selectLocation[0].dispatchEvent(new MouseEvent("click"));
-          }
+        });
+        // if (selectLocation.is(".mat-select-empty")) {
+        //   let options = $("#mat-select-0-panel mat-option");
+        //   if (options.length) {
+        //     options.each(function () {
+        //       let name = $(this).text().trim();
+        //       if (name == OPTIONS_TARGET_APPLY_CENTER) {
+        //         $(this)[0].dispatchEvent(new MouseEvent("click"));
+        //       }
+        //     });
+        //   } else {
+        //     selectLocation[0].dispatchEvent(new MouseEvent("click"));
+        //   }
 
-          setTimeout(checkSchedule, 100);
-        } else {
-          if (selectType.is(".mat-select-empty")) {
-            let options = $("#mat-select-2-panel mat-option");
-            if (options.length) {
-              options.each(function () {
-                let name = $(this).text().trim();
-                if (name == "意大利签证申请") {
-                  $(this)[0].dispatchEvent(new MouseEvent("click"));
-                }
-              });
-            } else {
-              selectType[0].dispatchEvent(new MouseEvent("click"));
-            }
+        //   setTimeout(checkSchedule, 1000 * SELECT_LOCATION_STEP);
+        // } else {
+        //   if (selectType.is(".mat-select-empty")) {
+        //     let options = $("#mat-select-2-panel mat-option");
+        //     if (options.length) {
+        //       options.each(function () {
+        //         let name = $(this).text().trim();
+        //         if (name == OPTIONS_TARGET_VISA_TYPE) {
+        //           $(this)[0].dispatchEvent(new MouseEvent("click"));
+        //         }
+        //       });
+        //     } else {
+        //       selectType[0].dispatchEvent(new MouseEvent("click"));
+        //     }
 
-            setTimeout(checkSchedule, 100);
-          } else {
-            if (selectVisaType.is(".mat-select-empty")) {
-              let options = $("#mat-select-4-panel mat-option");
-              if (options.length) {
-                let lastCheckIndex: any = GM_getValue("lastCheckIndex");
-                if (
-                  typeof lastCheckIndex === "undefined" ||
-                  lastCheckIndex == null
-                ) {
-                  lastCheckIndex = -1;
-                }
-                let checkIndex = lastCheckIndex + 1;
-                if (checkIndex >= options.length) {
-                  checkIndex = 0;
-                }
-                let checkOption = $(options[checkIndex]);
-                checkOption[0].dispatchEvent(new MouseEvent("click"));
-                GM_setValue("lastCheckIndex", checkIndex);
-              } else {
-                selectVisaType[0].dispatchEvent(new MouseEvent("click"));
-              }
-              setTimeout(checkSchedule, 100);
-            } else {
-              checkResult();
-            }
-          }
-        }
+        //     setTimeout(checkSchedule, 1000 * APPLY_TYPE_STEP);
+        //   } else {
+        //     if (selectVisaType.is(".mat-select-empty")) {
+        //       let options = $("#mat-select-4-panel mat-option");
+        //       if (options.length) {
+        //         let lastCheckIndex: any = GM_getValue("lastCheckIndex");
+        //         if (typeof lastCheckIndex === "undefined" || lastCheckIndex == null) {
+        //           lastCheckIndex = -1;
+        //         }
+        //         let checkIndex = lastCheckIndex + 1;
+        //         if (checkIndex >= options.length) {
+        //           checkIndex = 0;
+        //         }
+        //         let checkOption = $(options[checkIndex]);
+        //         checkOption[0].dispatchEvent(new MouseEvent("click"));
+        //         GM_setValue("lastCheckIndex", checkIndex);
+        //       } else {
+        //         selectVisaType[0].dispatchEvent(new MouseEvent("click"));
+        //       }
+        //       setTimeout(checkSchedule, 1000 * VISA_TYPE_STEP);
+        //     } else {
+        //       checkResult();
+        //     }
+        //   }
+        // }
       } else {
         setTimeout(checkSchedule, 1000);
       }
@@ -154,9 +282,7 @@ function App() {
     if (currentUrl() == PAGE_INDEX) {
       let btn = $("a.lets-get-started");
       if (btn.length) {
-        (btn as JQuery<HTMLElement>)
-          .attr("target", "_self")[0]
-          .dispatchEvent(new MouseEvent("click"));
+        (btn as JQuery<HTMLElement>).attr("target", "_self")[0].dispatchEvent(new MouseEvent("click"));
       } else {
         setTimeout(init, 1000);
       }
@@ -180,14 +306,16 @@ function App() {
     if (url == PAGE_INDEX) {
       init();
     } else if (url == PAGE_LOGIN) {
-      // let username = GM_getValue("username");
-      // let password = GM_getValue("password");
-      // if (username && password) {
-      //   login();
-      // } else {
-      //   alert("请填写登录信息");
-      // }
-      login();
+      let username = GM_getValue("username");
+      let password = GM_getValue("password");
+      let userEmail = sessionStorage.getItem("userEmail");
+      let userPass = sessionStorage.getItem("userPass");
+      if ((username && password) || (userEmail && userPass)) {
+        login();
+      } else {
+        alert("请填写登录信息");
+      }
+      // login();
     } else if (url == PAGE_DASHBOARD) {
       startApplication();
     } else if (url == PAGE_APPLICATION) {
@@ -201,11 +329,7 @@ function App() {
   const customerApplyList = () => {
     return (
       <div className="customer-list">
-        <textarea
-          name="textarea"
-          id="textarea"
-          placeholder="客户信息列表"
-        ></textarea>
+        <textarea name="textarea" id="textarea" placeholder="客户信息列表"></textarea>
       </div>
     );
   };

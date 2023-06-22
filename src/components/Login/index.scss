@@ -1,0 +1,28 @@
+.content {
+  background-color: azure;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 80px;
+  right: 0;
+  padding: 10px;
+  border: 1px solid #6a62e2;
+  border-radius: 8px;
+  -webkit-border-radius: 8px;
+  -moz-border-radius: 8px;
+  -ms-border-radius: 8px;
+  -o-border-radius: 8px;
+  .visaLogin {
+    position: relative;
+    .info-input {
+      background-color: #fff;
+      margin-left: 5px;
+      border: 1px solid #333;
+      color: #333;
+      &::placeholder {
+        font-size: 12px;
+        color: #aaa;
+      }
+    }
+  }
+}

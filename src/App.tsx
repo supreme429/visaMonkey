@@ -9,61 +9,56 @@ import {
   PAGE_DETAILS,
   READING_TEXT_SUCCESS,
   TARGET_MONTH,
-  OPTIONS_TARGET_APPLY_CENTER,
-  OPTIONS_TARGET_VISA_TYPE,
   LOGIN_LIMIT_TIME,
   TIMES_LIMITS,
   TIMEOUT_HOURS,
-  SELECT_LOCATION_STEP,
-  APPLY_TYPE_STEP,
   VISA_TYPE_STEP,
 } from "./config/index";
 import "./App.scss";
+import { Login, CustomerInfo, ConfigSetting } from "./components";
 
 function App() {
   const [show, setShow] = useState(false);
-  const [email, setEmail] = useState<string>("");
-  const emailRef = useRef<HTMLInputElement>(null);
-  const [password, setPassword] = useState("");
-  const passwordRef = useRef<HTMLInputElement>(null);
-  const [customerList, setCustomerList] = useState(null);
+  const userConfig = GM_getValue("userConfig") as configType;
+  // const [email, setEmail] = useState<string>("");
+  // const emailRef = useRef<HTMLInputElement>(null);
+  // const [password, setPassword] = useState("");
+  // const passwordRef = useRef<HTMLInputElement>(null);
 
-  const onEmailChange = (e: any) => {
-    setEmail((e.target as HTMLInputElement).value);
-  };
-  const onPasswordChange = (e: any) => {
-    setPassword((e.target as HTMLInputElement).value);
-  };
+  // const onEmailChange = (e: any) => {
+  //   setEmail((e.target as HTMLInputElement).value);
+  // };
+  // const onPasswordChange = (e: any) => {
+  //   setPassword((e.target as HTMLInputElement).value);
+  // };
 
-  const saveUserData = () => {
-    GM_setValue("username", email);
-    GM_setValue("password", password);
-    sessionStorage.setItem("userEmail", email);
-    sessionStorage.setItem("userPass", password);
-  };
+  // const saveUserData = () => {
+  //   GM_setValue("username", email);
+  //   GM_setValue("password", password);
+  // };
 
-  // 填入登录信息
-  const setVisaInfo = () => {
-    if (currentUrl() === PAGE_LOGIN) {
-      return new Promise((resolve) => {
-        let usernameInput = getElement(".mat-form-field-infix #mat-input-0");
-        let passwordInput = getElement(".mat-form-field-infix #mat-input-1");
-        (usernameInput as JQuery<HTMLElement>).val(email)[0].dispatchEvent(new Event("input"));
-        (passwordInput as JQuery<HTMLElement>).val(password)[0].dispatchEvent(new Event("input"));
-        setShow(false);
-        resolve(true);
-      });
-    }
-  };
+  // // 填入登录信息
+  // const setVisaInfo = () => {
+  //   if (currentUrl() === PAGE_LOGIN) {
+  //     return new Promise((resolve) => {
+  //       let usernameInput = getElement(".mat-form-field-infix #mat-input-0");
+  //       let passwordInput = getElement(".mat-form-field-infix #mat-input-1");
+  //       (usernameInput as JQuery<HTMLElement>).val(email)[0].dispatchEvent(new Event("input"));
+  //       (passwordInput as JQuery<HTMLElement>).val(password)[0].dispatchEvent(new Event("input"));
+  //       setShow(false);
+  //       resolve(true);
+  //     });
+  //   }
+  // };
 
-  // 登录
-  const login = async () => {
-    const res = await setVisaInfo();
-    if (res) {
-      let btn = getElement("app-login button.btn-block");
-      btn && (btn as JQuery<HTMLElement>)[0].dispatchEvent(new MouseEvent("click"));
-    }
-  };
+  // // 登录
+  // const login = async () => {
+  //   const res = await setVisaInfo();
+  //   if (res) {
+  //     let btn = getElement("app-login button.btn-block");
+  //     btn && (btn as JQuery<HTMLElement>)[0].dispatchEvent(new MouseEvent("click"));
+  //   }
+  // };
 
   // 选择签证中心
   const selectLocationStep = () => {
@@ -74,7 +69,7 @@ function App() {
         if (options.length) {
           options.each(function () {
             let name = $(this).text().trim();
-            if (name == OPTIONS_TARGET_APPLY_CENTER) {
+            if (name === userConfig.applyCenter) {
               $(this)[0].dispatchEvent(new MouseEvent("click"));
               resolve(true);
             }
@@ -97,7 +92,7 @@ function App() {
         if (options.length) {
           options.each(function () {
             let name = $(this).text().trim();
-            if (name == OPTIONS_TARGET_VISA_TYPE) {
+            if (name === userConfig.visaType) {
               $(this)[0].dispatchEvent(new MouseEvent("click"));
               resolve(true);
             }
@@ -198,59 +193,6 @@ function App() {
               done && selectVisaTypeStep();
             });
         });
-        // if (selectLocation.is(".mat-select-empty")) {
-        //   let options = $("#mat-select-0-panel mat-option");
-        //   if (options.length) {
-        //     options.each(function () {
-        //       let name = $(this).text().trim();
-        //       if (name == OPTIONS_TARGET_APPLY_CENTER) {
-        //         $(this)[0].dispatchEvent(new MouseEvent("click"));
-        //       }
-        //     });
-        //   } else {
-        //     selectLocation[0].dispatchEvent(new MouseEvent("click"));
-        //   }
-
-        //   setTimeout(checkSchedule, 1000 * SELECT_LOCATION_STEP);
-        // } else {
-        //   if (selectType.is(".mat-select-empty")) {
-        //     let options = $("#mat-select-2-panel mat-option");
-        //     if (options.length) {
-        //       options.each(function () {
-        //         let name = $(this).text().trim();
-        //         if (name == OPTIONS_TARGET_VISA_TYPE) {
-        //           $(this)[0].dispatchEvent(new MouseEvent("click"));
-        //         }
-        //       });
-        //     } else {
-        //       selectType[0].dispatchEvent(new MouseEvent("click"));
-        //     }
-
-        //     setTimeout(checkSchedule, 1000 * APPLY_TYPE_STEP);
-        //   } else {
-        //     if (selectVisaType.is(".mat-select-empty")) {
-        //       let options = $("#mat-select-4-panel mat-option");
-        //       if (options.length) {
-        //         let lastCheckIndex: any = GM_getValue("lastCheckIndex");
-        //         if (typeof lastCheckIndex === "undefined" || lastCheckIndex == null) {
-        //           lastCheckIndex = -1;
-        //         }
-        //         let checkIndex = lastCheckIndex + 1;
-        //         if (checkIndex >= options.length) {
-        //           checkIndex = 0;
-        //         }
-        //         let checkOption = $(options[checkIndex]);
-        //         checkOption[0].dispatchEvent(new MouseEvent("click"));
-        //         GM_setValue("lastCheckIndex", checkIndex);
-        //       } else {
-        //         selectVisaType[0].dispatchEvent(new MouseEvent("click"));
-        //       }
-        //       setTimeout(checkSchedule, 1000 * VISA_TYPE_STEP);
-        //     } else {
-        //       checkResult();
-        //     }
-        //   }
-        // }
       } else {
         setTimeout(checkSchedule, 1000);
       }
@@ -269,7 +211,7 @@ function App() {
         $("form")[1].onreset;
         checkSchedule();
       } else {
-        if (alertTips.text().trim().substr(14, 2) === TARGET_MONTH) {
+        if (alertTips.text().trim().substr(14, 2) === userConfig.targetMonth) {
           voiceRead(READING_TEXT_SUCCESS);
           btn[0].dispatchEvent(new MouseEvent("click"));
         }
@@ -301,17 +243,26 @@ function App() {
     }
   };
 
+  const userInfo = () => {
+    let lastName = $(".mat-form-field-infix #mat-input-2");
+    let firstName = $(".mat-form-field-infix #mat-input-3");
+    let nations = $(".mat-form-field-infix #mat-select-value-7"); // #mat-select-value-7
+    let passport = $(".mat-form-field-infix #mat-input-4");
+    let countryCode = $(".mat-form-field-infix #mat-input-5");
+    let phoneNumber = $(".mat-form-field-infix #mat-input-6");
+    let email = $(".mat-form-field-infix #mat-input-7");
+  };
+
   const autoRun = () => {
     let url = currentUrl();
     if (url == PAGE_INDEX) {
       init();
     } else if (url == PAGE_LOGIN) {
+      // saveUserData();
       let username = GM_getValue("username");
       let password = GM_getValue("password");
-      let userEmail = sessionStorage.getItem("userEmail");
-      let userPass = sessionStorage.getItem("userPass");
-      if ((username && password) || (userEmail && userPass)) {
-        login();
+      if (username && password) {
+        // login();
       } else {
         alert("请填写登录信息");
       }
@@ -325,69 +276,14 @@ function App() {
     }
   };
 
-  // 客户申请列表
-  const customerApplyList = () => {
-    return (
-      <div className="customer-list">
-        <textarea name="textarea" id="textarea" placeholder="客户信息列表"></textarea>
-      </div>
-    );
-  };
-
-  // 重置
-  const resetInfo = () => {
-    return (
-      <div
-        className="btn reset"
-        onClick={() => {
-          window.location.reload();
-        }}
-      >
-        重置
-      </div>
-    );
-  };
-
+  const [step, setStep] = useState<number>(1);
   return (
     <div className="App">
       {show ? (
         <div className="content">
-          <div className="visaLogin">
-            <p className="login-input">
-              邮箱
-              <input
-                type="text"
-                className="info-input"
-                placeholder="登录visa帐号"
-                value={email}
-                ref={emailRef}
-                onChange={onEmailChange}
-              />
-            </p>
-            <p className="login-input">
-              密码
-              <input
-                type="password"
-                className="info-input"
-                placeholder="登录密码"
-                value={password}
-                ref={passwordRef}
-                onChange={onPasswordChange}
-              />
-            </p>
-            {customerApplyList()}
-            <div className="btnLine">
-              <div
-                className="btn start"
-                onClick={() => {
-                  autoRun();
-                }}
-              >
-                开始
-              </div>
-              {resetInfo()}
-            </div>
-          </div>
+          {step === 1 && <Login stepSet={setStep} />}
+          {step === 2 && <ConfigSetting stepSet={setStep} />}
+          {step === 3 && <CustomerInfo stepSet={setStep} />}
         </div>
       ) : (
         <div

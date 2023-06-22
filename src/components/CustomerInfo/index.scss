@@ -1,0 +1,13 @@
+.customerList {
+  .customer_list {
+    #textarea {
+      background: #fff;
+      color: #333;
+      width: 100%;
+      &::placeholder {
+        font-size: 12px;
+        color: #aaa;
+      }
+    }
+  }
+}

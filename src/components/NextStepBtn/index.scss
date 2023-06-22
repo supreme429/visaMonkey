@@ -1,0 +1,23 @@
+.nextBtnLine {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  .btnStart {
+    font-size: 14px;
+    text-align: center;
+    padding: 5px 20px;
+    &.start {
+      display: inline-block;
+      background: #186ad5;
+      color: #fff;
+    }
+    &:hover {
+      cursor: pointer;
+    }
+    border-radius: 6px;
+    -webkit-border-radius: 6px;
+    -moz-border-radius: 6px;
+    -ms-border-radius: 6px;
+    -o-border-radius: 6px;
+  }
+}

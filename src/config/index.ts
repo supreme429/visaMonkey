@@ -1,8 +1,8 @@
 const TARGET_MONTH = "06"; // 目标月份
-const NATION_CODE = "ita"; // 国家简称代码
+const NATION_CODE = "che"; // 国家简称代码
 const FAIL_READ = false; // 失败是否朗读
-const READING_TEXT_SUCCESS = `出现${TARGET_MONTH}月瑞士名额`;
-const READING_TEXT_FAIL = `没有${TARGET_MONTH}月份的名额, 我将重新加载`;
+const READING_TEXT_SUCCESS = `出现${TARGET_MONTH}月${NATION_CODE}名额`;
+const READING_TEXT_FAIL = `没有${TARGET_MONTH}月份的名额`;
 // 签证中心
 const OPTIONS_TARGET_APPLY_CENTER = "重庆意大利签证申请中心";
 // 预约类型
@@ -37,7 +37,7 @@ const PAGE_DETAILS = `https://visa.vfsglobal.com/chn/zh/${NATION_CODE}/your-deta
 export interface CustomerData {
   lastName: string;
   firstName: string;
-  gender: string;
+  gender?: string;
   email: string;
   passportNo: string;
   expire: string;
@@ -45,7 +45,7 @@ export interface CustomerData {
   children?: CustomerData[];
 }
 
-const CUSTOMER_LIST: Array<CustomerData> = [
+const CUSTOMER_LIST: CustomerData[] = [
   {
     lastName: "",
     firstName: "",

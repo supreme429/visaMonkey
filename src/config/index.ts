@@ -1,5 +1,5 @@
 const TARGET_MONTH = "06"; // 目标月份
-const NATION_CODE = "che"; // 国家简称代码
+const NATION_CODE = window.location.pathname.split("/")[3]; // 国家简称代码
 const FAIL_READ = false; // 失败是否朗读
 const READING_TEXT_SUCCESS = `出现${TARGET_MONTH}月${NATION_CODE}名额`;
 const READING_TEXT_FAIL = `没有${TARGET_MONTH}月份的名额`;
@@ -35,14 +35,17 @@ const PAGE_DETAILS = `https://visa.vfsglobal.com/chn/zh/${NATION_CODE}/your-deta
  */
 
 export interface CustomerData {
-  lastName: string;
-  firstName: string;
-  gender?: string;
-  email: string;
-  passportNo: string;
-  expire: string;
-  telephone: string;
-  children?: CustomerData[];
+  lastName: string; // 名(拼音大写)
+  firstName: string; // 姓
+  gender: string; // 性别
+  birth: string; // 生日 dd/MM/YYYY
+  email: string; // 邮箱
+  passportNo: string; // 护照号
+  nation: "中国"; // 现国籍
+  nationAreaCode: string; // 国家电话区号
+  expire: string; // 护照过期时间
+  telephone: string; // 电话
+  children?: CustomerData[]; // 子女
 }
 
 const CUSTOMER_LIST: CustomerData[] = [
@@ -50,8 +53,11 @@ const CUSTOMER_LIST: CustomerData[] = [
     lastName: "",
     firstName: "",
     gender: "",
+    birth: "",
     passportNo: "",
     expire: "",
+    nation: "中国",
+    nationAreaCode: "",
     telephone: "",
     email: "",
   },

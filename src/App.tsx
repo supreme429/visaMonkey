@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { currentUrl, voiceRead, getElement } from "./utils/index";
 import { GM_setValue, GM_getValue } from "$";
 import {
@@ -8,7 +8,6 @@ import {
   PAGE_DASHBOARD,
   PAGE_DETAILS,
   READING_TEXT_SUCCESS,
-  TARGET_MONTH,
   LOGIN_LIMIT_TIME,
   TIMES_LIMITS,
   TIMEOUT_HOURS,
@@ -134,24 +133,12 @@ function App() {
     });
   };
 
-  // 点击「空白」
-  const clickBlank = () => {
-    let blank_span = $("span.ml-auto");
-    blank_span[0].dispatchEvent(new MouseEvent("click"));
-  };
-  // 点击「保持」 - 选择器不精确
-  function clickTipsBtn() {
-    let tipsBtn = $("#cdk-overlay-3 mat-dialog-container mat-modal-delete mat-dialog-actions row mat-btn-lg btn-block");
-    if (tipsBtn.length) {
-      tipsBtn[0].dispatchEvent(new MouseEvent("click"));
-    }
-  }
   // 请求限制
   let QUERY_TIMES = 0;
   const queryLimit = () => {
-    QUERY_TIMES++;
-    console.log("QUERY_TIMES: ", QUERY_TIMES);
     return new Promise((resolve) => {
+      QUERY_TIMES++;
+      console.log("QUERY_TIMES: ", QUERY_TIMES);
       if (QUERY_TIMES >= TIMES_LIMITS) {
         console.log("========");
         resolve(false);
@@ -165,17 +152,6 @@ function App() {
     });
   };
 
-  // 登录次数限制
-  let loginTime = 0;
-  const LoginLimit = () => {
-    return new Promise((resolve) => {
-      if (loginTime >= LOGIN_LIMIT_TIME) {
-        resolve(false);
-      } else {
-        resolve(true);
-      }
-    });
-  };
 
   const checkSchedule = async () => {
     if ($("app-session-timeout").length) {
@@ -193,9 +169,10 @@ function App() {
               done && selectVisaTypeStep();
             });
         });
-      } else {
-        setTimeout(checkSchedule, 1000);
       }
+      // else {
+      //   setTimeout(checkSchedule, 1000);
+      // }
     }
   };
 
@@ -257,16 +234,6 @@ function App() {
     let url = currentUrl();
     if (url == PAGE_INDEX) {
       init();
-    } else if (url == PAGE_LOGIN) {
-      // saveUserData();
-      let username = GM_getValue("username");
-      let password = GM_getValue("password");
-      if (username && password) {
-        // login();
-      } else {
-        alert("请填写登录信息");
-      }
-      // login();
     } else if (url == PAGE_DASHBOARD) {
       startApplication();
     } else if (url == PAGE_APPLICATION) {
@@ -277,6 +244,23 @@ function App() {
   };
 
   const [step, setStep] = useState<number>(1);
+  useEffect(() => {
+    if (step === 999) {
+      setStep(2);
+      setShow(false);
+    }
+  }, [step]);
+
+  const start = () => {
+    // let username = GM_getValue("username");
+    // let password = GM_getValue("password");
+    // if (username && password) {
+    //   setStep(2);
+    // } else {
+    //   setShow(true);
+    // }
+    setShow(true);
+  };
   return (
     <div className="App">
       {show ? (
@@ -289,7 +273,7 @@ function App() {
         <div
           className="card"
           onClick={() => {
-            setShow(true);
+            start();
           }}
         ></div>
       )}

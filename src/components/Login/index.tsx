@@ -1,12 +1,17 @@
 import "./index.scss";
-import { GM_setValue } from "$";
+import { GM_setValue, GM_getValue } from "$";
 import React, { useRef, useState, useEffect } from "react";
 import { currentUrl, getElement } from "../../utils/index";
-import { PAGE_LOGIN } from "../../config";
+import { PAGE_DASHBOARD, PAGE_LOGIN } from "../../config";
 import { NextStepBtn } from "../index";
 
 export interface stepPropsType {
   stepSet: Function;
+}
+
+interface infoType {
+  username: string;
+  password: string;
 }
 
 const Login: React.FC<stepPropsType> = (props) => {
@@ -28,32 +33,67 @@ const Login: React.FC<stepPropsType> = (props) => {
   };
 
   // 填入登录信息
-  const setVisaInfo = () => {
+  const setVisaInfo = (data: infoType) => {
     if (currentUrl() === PAGE_LOGIN) {
+      let usernameInput = getElement(".mat-form-field-infix #mat-input-0");
+      let passwordInput = getElement(".mat-form-field-infix #mat-input-1");
       return new Promise((resolve) => {
-        let usernameInput = getElement(".mat-form-field-infix #mat-input-0");
-        let passwordInput = getElement(".mat-form-field-infix #mat-input-1");
-        (usernameInput as JQuery<HTMLElement>).val(email)[0].dispatchEvent(new Event("input"));
-        (passwordInput as JQuery<HTMLElement>).val(password)[0].dispatchEvent(new Event("input"));
+        if (data) {
+          (usernameInput as JQuery<HTMLElement>).val(data.username)[0].dispatchEvent(new Event("input"));
+          (passwordInput as JQuery<HTMLElement>).val(data.password)[0].dispatchEvent(new Event("input"));
+        } else {
+          (usernameInput as JQuery<HTMLElement>).val(email)[0].dispatchEvent(new Event("input"));
+          (passwordInput as JQuery<HTMLElement>).val(password)[0].dispatchEvent(new Event("input"));
+        }
         resolve(true);
       });
     }
   };
 
   // 登录
-  const login = async () => {
-    const res = await setVisaInfo();
-    console.log(res);
+  const [loginTime, setLoginTime] = useState(0);
+  const login = async (data: infoType) => {
+    const res = await setVisaInfo(data);
     if (res) {
       saveUserData();
       let btn = getElement("app-login button.btn-block");
       btn && (btn as JQuery<HTMLElement>)[0].dispatchEvent(new MouseEvent("click"));
-      stepSet(2);
+      setTimeout(() => {
+        if (currentUrl() === PAGE_DASHBOARD) {
+          stepSet(2);
+        } else {
+          alert("登录未成功 将再次尝试登录");
+          checkIsLogin();
+          if (loginTime === 5) {
+            return false;
+          }
+        }
+      }, 500);
+    }
+  };
+
+  const getLoginInfo = () => {
+    return new Promise((resolve) => {
+      let username = GM_getValue("username");
+      let password = GM_getValue("password");
+      if (username && password) {
+        resolve({ username, password });
+      } else {
+        resolve(false);
+      }
+    });
+  };
+
+  const checkIsLogin = async () => {
+    const res: unknown = await getLoginInfo();
+    if (res) {
+      setLoginTime(loginTime + 1);
+      login(res as infoType);
     }
   };
 
   useEffect(() => {
-    console.log(props);
+    checkIsLogin();
   }, []);
 
   return (

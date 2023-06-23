@@ -2,7 +2,9 @@ import styles from "./index.module.scss";
 import React, { useState, useEffect } from "react";
 import type { stepPropsType } from "../index";
 import { NextStepBtn } from "../index";
-import { GM_setValue } from "$";
+import { GM_setValue, GM_getValue } from "$";
+import { currentUrl } from "../../utils/index";
+import { PAGE_DASHBOARD } from "../../config";
 
 const settingList: settingInputType[] = [
   {
@@ -54,11 +56,12 @@ const settingList: settingInputType[] = [
 
 const ConfigSetting: React.FC<stepPropsType> = (props) => {
   const { stepSet } = props;
+  const currentNationCode: string = window.location.pathname.split("/")[3];
   const [config, setConfig] = useState<configType>({
     targetMonth: "",
-    nationCode: "",
-    applyCenter: "",
-    visaType: "",
+    nationCode: currentNationCode,
+    applyCenter: currentNationCode === "ita" ? "重庆意大利签证申请中心" : "瑞士签证申请中心，重庆（短期C类）",
+    visaType: currentNationCode === "ita" ? "CHONGQING APPOINTMENTS" : "瑞士签证申请中心，重庆（短期C类）",
     timesLimit: "1000000000000000",
     timeoutHours: "2",
     selectLocationStep: "5",
@@ -85,15 +88,49 @@ const ConfigSetting: React.FC<stepPropsType> = (props) => {
     });
   };
 
-  const handler = () => {
+  const startApplication = () => {
+    if (currentUrl() == PAGE_DASHBOARD) {
+      let btn = $(".mat-focus-indicator.btn.mat-btn-lg.btn-block");
+      return new Promise((resolve) => {
+        if (btn.length) {
+          btn[0].dispatchEvent(new MouseEvent("click"));
+          resolve(true);
+          // setTimeout(checkSchedule, 1000);
+        } else {
+          resolve(false);
+        }
+      });
+    } else {
+      alert('没有到DashBoard');
+    }
+  };
+
+  const handler = async () => {
     // alert(JSON.stringify(config));
     if (!config.targetMonth || !config.nationCode || !config.applyCenter || !config.visaType) {
       alert(`请填写完整配置项`);
     } else {
       GM_setValue("userConfig", config);
-      stepSet(3);
+      const res = await startApplication();
+      res ? stepSet(3) : startApplication();
+      // stepSet(3);
     }
   };
+
+  const getUserConfigSetting = () => {
+    return new Promise((resolve) => {
+      const store: configType = GM_getValue("userConfig");
+      if (store) resolve(store);
+    });
+  };
+  const checkStore = async () => {
+    const hasStore = await getUserConfigSetting();
+    if (hasStore) setConfig(hasStore as configType);
+  };
+
+  useEffect(() => {
+    checkStore();
+  }, []);
 
   return (
     <div className={styles.ConfigSetting}>
